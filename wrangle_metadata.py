@@ -19,7 +19,7 @@ def extract_from_json(json_dict):
         if resource["resType"] != "table":
             this_info["tabular_only"] = False
         else:
-            tot_columns += resource["columnsCount"]
+            tot_columns += len(resource["columns"])
     this_info["tot_res"] = len(json_dict["dataResources"])
     this_info["tot_columns"] = tot_columns
     
@@ -57,4 +57,4 @@ for folder in os.listdir(subrepo):
 
 df_stats = pd.DataFrame().from_dict(overall_stats_dict, orient="index")
 print(df_stats.drop(["datasetName", "tot_res"], axis=1).sum())
-print(df_stats["table"].max())
+print(f'Dataset with the largest number of tables: {df_stats["table"].max()}')

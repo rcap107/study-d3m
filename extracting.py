@@ -35,8 +35,8 @@ while next_member is not None:
         else:
             count_by_ext[ext] = 1
 
-        if ext in tgt_ext:
-            tfile.extract(next_member.name, osp.expanduser("~/store/d3m/extracted_files"))
+        # if ext in tgt_ext:
+        #     tfile.extract(next_member.name, osp.expanduser("~/store/d3m/extracted_files"))
 
     next_member = tfile.next()
     count += 1
