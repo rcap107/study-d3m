@@ -46,17 +46,20 @@ folders = glob.glob(f"{DATA_PATH}/training_datasets/*/*") + \
 for folder in folders:
     dataset_name = osp.basename(folder)
     dataset_folder = dataset_name + "_dataset"
+    problem_folder = dataset_name + "_problem"
     json_dataset = json.load(open(
         osp.join(folder, dataset_folder, "datasetDoc.json")))
     dsetID, info_ = extract_from_json(json_dataset)
-    if info_[dsetID]["tabular_only"]:
-        list_viable_datasets.append(folder)    
+    if info_[dsetID]["tabular_only"] and osp.exists(osp.join(folder,problem_folder, "dataSplits.csv")):
+        list_viable_datasets.append(folder) 
     overall_stats_dict.update(info_)
 
 df_stats = pd.DataFrame().from_dict(overall_stats_dict, orient="index")
 print(df_stats.drop(["datasetName", "tot_res"], axis=1).sum())
 print(f'Dataset with the largest number of tables: {df_stats["table"].max()}')
+print(f"Number of viable dataset: {len(list_viable_datasets)}")
 
 with open("viable_datasets.txt", "w") as fp:
+    fp.write(f"{len(list_viable_datasets)}\n")
     for ds in list_viable_datasets:
         fp.write(f"{ds}\n")
