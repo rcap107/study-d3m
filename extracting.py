@@ -1,3 +1,8 @@
+'''This script iterats over the tar archive to measure the number and size of 
+files by extension. 
+
+This takes a very long time, so the script itself isn't very useful. 
+'''
 import tarfile
 import os.path as osp
 import os
@@ -17,7 +22,7 @@ tfile = tarfile.open(ARCHIVE_PATH, mode="r:bz2")
 sizes_by_ext = {}
 count_by_ext = {}
 count = 0
-next_member = tfile.next()
+next_member = tfile.next() 
 
 tgt_ext = [".txt", ".csv"]
 progress = tqdm()
