@@ -44,5 +44,13 @@ At least, I managed to download the full repository in the end, and it is now si
 # Studying data distribution
 
 # Extracting tables of interest
+I've extracted all `.csv` files in the repository using the CLI, without filtering 
+filtering anything:
+```
+tar --wildcards -xvf datasets-master.tar.bz2 '*.csv'
+```
+This means that the repo includes the `learningData.csv` table for datasets we 
+are not interested in. 
+
 
 
