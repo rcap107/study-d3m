@@ -133,3 +133,4 @@ datasets-master/
 d3m/
 datasets-master
 viable_datasets.txt
+*.json
