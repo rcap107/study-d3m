@@ -1,12 +1,15 @@
-import pandas as pd
-import os.path as osp
-import os
-import numpy as np
 import json
-from tqdm import tqdm
+import os
+import os.path as osp
+import pickle
 from collections import Counter
-import seaborn as sns
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from tqdm import tqdm
+
 
 def extract_from_json(json_dict):
     info_dict = {}
@@ -18,73 +21,100 @@ def extract_from_json(json_dict):
     return info_dict
 
 
-v_datasets_path = "viable_datasets.txt"
+def plot_stats(df_data, df_tasks, df_metrics):
+    fig, ax = plt.subplots(1)
+    sns.barplot(df_tasks.reset_index(), x="index", y="count")
+    _ = plt.xticks(rotation=45, ha="right")
+    plt.xlabel("Task")
+    plt.tight_layout()
+    fig.savefig("images/tasks.png")
 
-counter_tasks = Counter()
-counter_metrics = Counter()
+    fig, ax = plt.subplots(1)
+    sns.barplot(df_metrics.reset_index(), x="index", y="count", ax=ax)
+    _ = plt.xticks(rotation=45, ha="right")
+    plt.xlabel("Metric")
+    plt.tight_layout()
+    fig.savefig("images/metrics.png")
 
-dict_shapes = {}
+    fig, ax = plt.subplots(1)
+    sns.scatterplot(data=df_data, x="rows", y="columns")
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.title("Distribution of row/columns")
+    plt.xlabel("Number of rows (log)")
+    plt.ylabel("Number of columns (log)")
+    plt.tight_layout()
+    fig.savefig("images/dist-row-columns.png")
 
-dict_df_metadata = {}
+
+def parse_study_datasets_from_file(extract_from_json, v_datasets_path):
+    counter_tasks = Counter()
+    counter_metrics = Counter()
+    dict_shapes = {}
+    dict_df_metadata = {}
 
 
-with open(v_datasets_path, "r") as fp:
-    n_rows = int(fp.readline().strip())
-    for idx, row in tqdm(enumerate(fp), total=n_rows):
-        folder = row.strip()
-        dataset_name = osp.basename(folder)
-        dataset_folder = dataset_name + "_dataset"
-        problem_folder = dataset_name + "_problem"
+    with open(v_datasets_path, "r") as fp:
+        n_rows = int(fp.readline().strip())
+        for idx, row in tqdm(enumerate(fp), total=n_rows):
+            folder = row.strip()
+            dataset_name = osp.basename(folder)
+            dataset_folder = dataset_name + "_dataset"
+            problem_folder = dataset_name + "_problem"
 
-        pth = osp.join(folder, dataset_folder)
-        tables_folder = osp.join(pth, "tables")
-        total_shape = np.array([0,0])
-        for df_file in os.listdir(tables_folder):
-            df = pd.read_csv(osp.join(tables_folder, df_file))
-            total_shape += df.shape
+            pth = osp.join(folder, dataset_folder)
+            tables_folder = osp.join(pth, "tables")
+            total_shape = np.array([0,0])
+            for df_file in os.listdir(tables_folder):
+                df = pd.read_csv(osp.join(tables_folder, df_file))
+                total_shape += df.shape
 
-        json_metadata = json.load(open(
-            osp.join(folder, problem_folder, "problemDoc.json")))
-        info_metadata = extract_from_json(json_metadata)    
+            json_metadata = json.load(open(
+                osp.join(folder, problem_folder, "problemDoc.json")))
+            info_metadata = extract_from_json(json_metadata)    
 
-        counter_tasks.update(info_metadata["taskKeywords"])
-        counter_metrics.update(info_metadata["performanceMetrics"])
+            counter_tasks.update(info_metadata["taskKeywords"])
+            counter_metrics.update(info_metadata["performanceMetrics"])
+            
+            dict_shapes[dataset_name] = total_shape
+            
+            dict_df_metadata[idx] = {
+                "name": dataset_name,
+                "path": folder,
+                "taskKeywords": tuple(info_metadata["taskKeywords"]),
+                "performanceMetrics": tuple(info_metadata["performanceMetrics"]),
+                "totalShape": total_shape
+            }
         
-        dict_shapes[dataset_name] = total_shape
-        
-        dict_df_metadata[dataset_name] = {
-            "name": dataset_name,
-            "taskKeywords": tuple(info_metadata["taskKeywords"]),
-            "performanceMetrics": tuple(info_metadata["performanceMetrics"]),
-            "totalShape": total_shape
-        }
-        
-json.dump(dict_df_metadata, open("info_valid_datasets.json", "w"))
+    pickle.dump(dict_df_metadata, open("info_valid_datasets.json", "wb"))
 
-df_data = pd.DataFrame().from_dict(dict_shapes, orient="index", columns=["rows", "columns"])
-df_tasks = pd.DataFrame().from_dict(counter_tasks, orient="index", columns=["count"])
-df_metrics = pd.DataFrame().from_dict(counter_metrics, orient="index", columns=["count"])
+    df_data = pd.DataFrame().from_dict(dict_shapes, orient="index", columns=["rows", "columns"])
+    df_tasks = pd.DataFrame().from_dict(counter_tasks, orient="index", columns=["count"])
+    df_metrics = pd.DataFrame().from_dict(counter_metrics, orient="index", columns=["count"])
+    df_metadata = pd.DataFrame().from_dict(dict_df_metadata, orient="index")
+    df_metadata["numCells"] = df_metadata["totalShape"].apply(lambda x: x[0]) * \
+        df_metadata["totalShape"].apply(lambda x: x[1])
+    return df_data,df_tasks,df_metrics,df_metadata
 
-fig, ax = plt.subplots(1)
-sns.barplot(df_tasks.reset_index(), x="index", y="count")
-_ = plt.xticks(rotation=45, ha="right")
-plt.xlabel("Task")
-plt.tight_layout()
-fig.savefig("tasks.png")
+def extract_subset(df_metadata):
+    small_set = {}
+    for g, group in df_metadata.groupby("performanceMetrics"):
+        selected = group.sort_values("numCells").iloc[len(group)//2]
+        small_set.update({selected["path"]:g})
 
-fig, ax = plt.subplots(1)
-sns.barplot(df_metrics.reset_index(), x="index", y="count", ax=ax)
-_ = plt.xticks(rotation=45, ha="right")
-plt.xlabel("Metric")
-plt.tight_layout()
-fig.savefig("metrics.png")
+    return small_set
 
-fig, ax = plt.subplots(1)
-sns.scatterplot(data=df_data, x="rows", y="columns")
-plt.xscale("log")
-plt.yscale("log")
-plt.title("Distribution of row/columns")
-plt.xlabel("Number of rows (log)")
-plt.ylabel("Number of columns (log)")
-plt.tight_layout()
-fig.savefig("dist-row-columns.png")
+if __name__ == "__main__":
+    v_datasets_path = "viable_datasets.txt"
+
+    df_data, df_tasks, df_metrics, df_metadata = parse_study_datasets_from_file(extract_from_json, v_datasets_path)
+    
+    small_set = extract_subset(df_metadata)
+
+    with open("small_set.txt", "w") as fp:
+        fp.write(f"{len(small_set)}\n")
+        for pth in small_set.keys():
+            fp.write(f"{pth}\n")
+    
+    plot_stats(df_data, df_tasks, df_metrics)
+    
