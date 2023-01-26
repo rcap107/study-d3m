@@ -27,12 +27,12 @@ for v_path in tqdm(valid_paths):
     target_dataset_learning_data = v_path/f"{ds_name}_dataset"/Path("tables/learningData.csv")
     assert target_dataset_learning_data.exists()
     df = pd.read_csv(target_dataset_learning_data)
-    print(df.shape)
+
     full_container = container.Dataset.load(target_dataset_learning_data.absolute().as_uri()) 
     
     try:
         cursor = client.search_with_data(query={}, supplied_data=full_container)
-        results = cursor.get_next_page()
+        results = cursor.get_next_page(limit=100, timeout=None)
         ok_datasets_candidates[ds_name] = len(results)
     except Exception as e:    
         print(f"Server error for {v_path}")
