@@ -91,7 +91,9 @@ The script that I am using to query Auctus is `query_auctus.py`. I used the note
 `python-api-ny-taxi-demand.ipynb` as example for how to use the API to query the
 datasets. 
 
-Originally, I was querying all the datasets that I had filtered in `viable_datasets.txt`, however there are a lot of them (~400), and querying the API takes a fairly long time. Therefore, I modified the `study_valid_datsets.py` to extract only one 
+Originally, I was querying all the datasets that I had filtered in `viable_datasets.txt`, 
+however there are a lot of them (~400), and querying the API takes a fairly long time. 
+Therefore, I modified the `study_valid_datsets.py` to extract only one 
 dataset (randomly selected) for each evaluation metric. Still, this failed again
 because some datasets are way too big (100k rows, 100s of columns) and that meant
 that querying the API took too long. 
@@ -102,7 +104,10 @@ the dataset that had the median number of rows, and I queried Auctus for that.
 I did not notice that `cursor.get_next_page` had a `limit` parameter (default=20), so I added a variable for that. 
 
 I still need to look into the metadata and download the datasets, however at this
-point the bases for the benchmark are "ready". 
+point the bases for the benchmark are "ready".  
+
+The format of the query results is reported [here](https://datadrivendiscovery.gitlab.io/datamart-api/query_result_schema.html#query-result-schema).
+
 
 - Querying Auctus for candidates for each of the datasets in the `valid datasets` set.
 - More statistics? 
