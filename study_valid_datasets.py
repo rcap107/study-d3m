@@ -53,7 +53,6 @@ def parse_study_datasets_from_file(extract_from_json, v_datasets_path):
     dict_shapes = {}
     dict_df_metadata = {}
 
-
     with open(v_datasets_path, "r") as fp:
         n_rows = int(fp.readline().strip())
         for idx, row in tqdm(enumerate(fp), total=n_rows):
@@ -66,7 +65,7 @@ def parse_study_datasets_from_file(extract_from_json, v_datasets_path):
             tables_folder = osp.join(pth, "tables")
             total_shape = np.array([0,0])
             for df_file in os.listdir(tables_folder):
-                df = pd.read_csv(osp.join(tables_folder, df_file))
+                df = pd.read_csv(osp.join(tables_folder, df_file), low_memory=False)
                 total_shape += df.shape
 
             json_metadata = json.load(open(
@@ -104,11 +103,17 @@ def extract_subset(df_metadata):
 
     return small_set
 
+
 if __name__ == "__main__":
-    v_datasets_path = "viable_datasets.txt"
+    v_datasets_path = "target_datasets.txt"
 
     df_data, df_tasks, df_metrics, df_metadata = parse_study_datasets_from_file(extract_from_json, v_datasets_path)
-    
+
+    dfs = dict(zip(["data", "tasks", "metrics", "metadata"], (df_data, df_tasks, df_metrics, df_metadata)))
+
+    for name, df in dfs.items():
+        df.to_csv(f"data/stats/stats_{name}.csv", index=False)
+
     small_set = extract_subset(df_metadata)
 
     with open("small_set.txt", "w") as fp:
@@ -116,5 +121,5 @@ if __name__ == "__main__":
         for pth in small_set.keys():
             fp.write(f"{pth}\n")
     
-    plot_stats(df_data, df_tasks, df_metrics)
+    # plot_stats(df_data, df_tasks, df_metrics)
     
