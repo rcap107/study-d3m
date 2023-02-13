@@ -137,3 +137,4 @@ viable_datasets.txt
 *.json
 .vscode
 .idea
+telegram_credentials.txt
